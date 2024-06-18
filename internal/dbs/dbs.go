@@ -32,6 +32,21 @@ func CreateDB() {
 	CreateTable(db)
 }
 
+func ConnectDB(name string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", name)
+	if err != nil {
+		log.Fatalf("unable to open database: %v", err)
+		return nil, err
+	}
+	defer db.Close()
+	err = db.Ping()
+	if err != nil {
+		log.Fatalf("unable to connect to database: %v", err)
+		return nil, err
+	}
+	return db, nil
+}
+
 
 func dbCheck(DBname string) bool {
 	appPath, err := os.Executable()
@@ -66,3 +81,4 @@ func CreateTable(db *sql.DB) {
 	}
 	log.Println("table created")
 }
+

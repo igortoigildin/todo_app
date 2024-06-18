@@ -17,6 +17,8 @@ func main() {
 	dbs.CreateDB()
 	r := chi.NewRouter()
 	r.Get("/api/nextdate", api.MyRequestHandler)
+	r.Post("/api/task", api.TaskHandler)
+	r.Get("/api/tasks", api.GetTasksHandler)
 	r.Handle("/*", http.FileServer(http.Dir("./web")))
 	fmt.Println("Starting the server on :7540...")
 	log.Fatal(http.ListenAndServe(":"+ cfg.Port, r))
