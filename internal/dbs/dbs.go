@@ -38,7 +38,7 @@ func ConnectDB(name string) (*sql.DB, error) {
 		log.Fatalf("unable to open database: %v", err)
 		return nil, err
 	}
-	defer db.Close()
+	// caller ConnectDB should close DB
 	err = db.Ping()
 	if err != nil {
 		log.Fatalf("unable to connect to database: %v", err)

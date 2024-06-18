@@ -122,9 +122,28 @@ func AddNewTask(w http.ResponseWriter, r *http.Request) {
 	if !checkIfTaskRequestValid(w, task) {
 		return
 	}
+	dateReceived, err := time.Parse("20060102", task.Date)
+	if err != nil {
+		JSONError(w, "Дата представлена в некорректном формате", http.StatusBadRequest)
+	}
+	timeNow, err := time.Parse("20060102", currentDate())
+	if err != nil {
+		JSONError(w, "Interanal server error", http.StatusInternalServerError)
+	}
+	// check if date in request is before current date or empty
+	if task.Date != "" && dateReceived.Unix() < timeNow.Unix() && task.Repeat != "" {
+		nextDate, err := NextDate(timeNow, task.Date, task.Repeat)
+		if err != nil {
+			JSONError(w, "Repeat format is not valid", http.StatusBadRequest)
+		}
+		task.Date = nextDate
+	} else if task.Date == "" || task.Repeat == "" {
+		task.Date = currentDate()
+	}
 	// sending task to db and get id
 	taskId, err := sendTaskToDB(w, task)
 	if err != nil {
+		log.Println(err.Error())
 		return 
 	}
 	// preparing json with task
@@ -136,6 +155,62 @@ func AddNewTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
     w.Write(resp)
+}
+
+func sendTaskToDB(w http.ResponseWriter, task Task) (IdStrusct, error) {
+	var taskId IdStrusct
+	// open and check db connection 
+	db, err := dbs.ConnectDB("scheduler.db")
+	if err != nil {
+		log.Fatalf("unable to connect to database: %v", err)
+	}
+	defer db.Close()
+	// sending received task to db
+	res, err := db.Exec("INSERT INTO scheduler (date, comment, title, repeat) VALUES (:date, :comment, :title, :repeat)",
+	sql.Named("date", task.Date),
+	sql.Named("comment", task.Comment),
+	sql.Named("title", task.Title),
+	sql.Named("repeat", task.Repeat))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return taskId, err
+	}
+	// getting the last inserted task
+	id, err := res.LastInsertId()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return taskId, err
+	}
+	taskId.Id = id
+	return taskId, nil
+}
+
+func checkIfTaskRequestValid(w http.ResponseWriter, task Task) bool {
+	// check if title line is empty
+	if task.Title == "" {
+		JSONError(w, "не указан заголовок задачи", http.StatusBadRequest)
+		return false
+	}
+	// check if time format is valid
+	_, err := time.Parse("20060102", task.Date)
+	if err != nil {
+		JSONError(w, "Дата представлена в некорректном формате", http.StatusBadRequest)
+		return false
+	}
+	// check repeat format
+	if task.Repeat != "" {
+		timeNow, err := time.Parse("20060102", currentDate())
+		if err != nil {
+			JSONError(w, "Interanal server error", http.StatusInternalServerError)
+			return false
+		}
+		_, err = NextDate(timeNow, task.Date, task.Repeat)
+		if err != nil {
+			JSONError(w, "Repeat format is not valid", http.StatusBadRequest)
+			return false
+		}
+	}
+	return true
 }
 
 
