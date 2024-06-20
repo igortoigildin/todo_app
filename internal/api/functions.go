@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
@@ -8,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/igortoigildin/todo_app/internal/dbs"
 )
 
 func NextDate(now time.Time, date string, repeat string) (string, error) {
@@ -84,3 +87,29 @@ func JSONError(w http.ResponseWriter, err interface{}, code int) {
     json.NewEncoder(w).Encode(result)
 }
 
+func idValid(id string) (bool, error) {
+	if id == "" {
+		return false, nil
+	}
+	db, err := dbs.ConnectDB("scheduler.db")
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+	defer db.Close()
+	rows, err := db.Query("SELECT * FROM scheduler WHERE id= :id;",
+	sql.Named("id", id))
+	if err != nil {
+		return false, err
+	}
+	tasks := make([]Task, 0)
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(&task.Id, &task.Date, &task.Title, &task.Comment, &task.Repeat); err != nil {
+			log.Println(err.Error())
+			return false, err
+		}
+		tasks = append(tasks, task)	
+	}
+	return len(tasks) != 0, nil
+}
