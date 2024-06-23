@@ -16,7 +16,7 @@ func LoadConfig() *Config {
 	if envPort := os.Getenv("TODO_PORT"); envPort != "" {
 		cfg.Port = envPort
 	}
-	if envDBpath := os.Getenv("TODO_PORT"); envDBpath != "" {
+	if envDBpath := os.Getenv("TODO_DBFILE"); envDBpath != "" {
 		cfg.DBpath = envDBpath
 	}
 	if envPass := os.Getenv("TODO_PASSWORD"); envPass != "" {
