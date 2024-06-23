@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/golang-jwt/jwt"
 	"github.com/igortoigildin/todo_app/internal/dbs"
 )
 type Task struct {
@@ -21,22 +23,62 @@ type Task struct {
 type IdStrusct struct {
 	Id 					int64	`json:"id"`
 }
+type passStruct struct {
+	Password 			string  `json:"password"`
+}
+type token struct {
+	Token 				string `json:"token"`
+}
 
 func TaskRouter() chi.Router {
 	dbs.CreateDB()
 	r := chi.NewRouter()
 	r.Route("/api/task", func(r chi.Router) {
-		r.Post("/", AddNewTask)
-		r.Get("/", GetTask)
-		r.Put("/", ChangeTask)
-		r.Delete("/", DeleteTask)
+		r.Post("/", auth(AddNewTask))
+		r.Get("/", auth(GetTask))
+		r.Put("/", auth(ChangeTask))
+		r.Delete("/", auth(DeleteTask))
 	})
 	r.Get("/api/nextdate", MyRequestHandler)
-	r.Get("/api/tasks", GetTasksHandler)
-	r.Post("/api/task/done", TaskDone)
+	r.Get("/api/tasks", auth(GetTasksHandler))
+	r.Post("/api/task/done", auth(TaskDone))
+	r.Post("/api/sign", SigninHandler)
 	r.Handle("/*", http.FileServer(http.Dir("./web")))
 	fmt.Println("Starting the server on :7540...")
 	return r
+}
+
+func SigninHandler(w http.ResponseWriter, r *http.Request) {
+	var passStruct passStruct
+	err := json.NewDecoder(r.Body).Decode(&passStruct)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	envPass := os.Getenv("TODO_PASSWORD")
+	if passStruct.Password == envPass {
+		var secretKey = []byte("your-secret-key")
+		myToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"foo": "bar",
+			"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		})
+		signedToken, err := myToken.SignedString(secretKey)
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusBadRequest)
+		}
+		var token token
+		token.Token = signedToken
+		resp, err := json.Marshal(token)
+		if err != nil {
+			JSONError(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(resp)
+	} else {
+		JSONError(w, "Неверный пароль", http.StatusInternalServerError)
+		return
+	}
 }
 
 func MyRequestHandler(w http.ResponseWriter, r *http.Request) {

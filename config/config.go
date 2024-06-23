@@ -5,6 +5,7 @@ import "os"
 type Config struct {
 	Port 	string
 	DBpath 	string
+	Pass 	string
 }
 
 func LoadConfig() *Config {
@@ -17,6 +18,9 @@ func LoadConfig() *Config {
 	}
 	if envDBpath := os.Getenv("TODO_PORT"); envDBpath != "" {
 		cfg.DBpath = envDBpath
+	}
+	if envPass := os.Getenv("TODO_PASSWORD"); envPass != "" {
+		cfg.Pass = envPass
 	}
 	return &cfg
 }

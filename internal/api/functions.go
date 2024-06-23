@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/igortoigildin/todo_app/internal/dbs"
 )
 
@@ -57,6 +60,43 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 	}
 }
 
+func auth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// check if pass is present
+		pass := os.Getenv("TODO_PASSWORD")
+		if len(pass) > 0 {
+			var jwt string
+			cookie, err := r.Cookie("token")
+			if err == nil {
+				jwt = cookie.Value
+			}
+			valid := true
+			err = verifyToken(jwt)
+			if err != nil {
+				valid = false
+			}
+			if !valid{
+				http.Error(w, "Authentification required", http.StatusUnauthorized)
+				return
+			}
+		}
+		next(w, r)
+	})
+}
+
+func verifyToken(tokenSting string) (error) {
+	token, err := jwt.Parse(tokenSting, func(t *jwt.Token) (interface{}, error) {
+		return []byte("your-secret-key"), nil
+	})
+	if err != nil {
+		return  err
+	}
+	if !token.Valid {
+		return  fmt.Errorf("invalid token")
+	}
+	return err
+}
+
 func currentDate() string {
 	return time.Now().Format("20060102")
 }
@@ -77,7 +117,7 @@ func formatDate(date string) (string, error) {
 	dateFormatted := result.Format("20060102")
 	return dateFormatted, nil
 }
-// creating method for error handling in JSON
+// method for error handling in JSON
 func JSONError(w http.ResponseWriter, err interface{}, code int) {
     w.Header().Set("Content-Type", "application/json; charset=utf-8")
     w.Header().Set("X-Content-Type-Options", "nosniff")
