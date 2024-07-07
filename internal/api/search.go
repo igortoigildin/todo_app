@@ -7,7 +7,6 @@ import (
 	"github.com/igortoigildin/todo_app/internal/model"
 )
 
-
 func performSearch(w http.ResponseWriter, searchValue string, h TodosHandler) map[string]interface{} {
 	var tasks []model.Task
 	var err error
@@ -32,7 +31,7 @@ func performSearch(w http.ResponseWriter, searchValue string, h TodosHandler) ma
 			return nil
 		}
 	} else {
-		// general reqest for all tasks	
+		// general reqest for all tasks
 		tasks, err = h.repo.GetAllTasks()
 		if err != nil {
 			JSONError(w, "Bad request", http.StatusInternalServerError)

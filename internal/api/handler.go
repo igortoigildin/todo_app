@@ -30,7 +30,7 @@ func (h TodosHandler) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	signedToken, err := checkPass(passStruct)
 	if err != nil {
-		JSONError(w, "Internal server error", http.StatusBadRequest )
+		JSONError(w, "Internal server error", http.StatusBadRequest)
 		return
 	}
 	if signedToken == "" {
@@ -45,7 +45,7 @@ func (h TodosHandler) SigninHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_,_ = w.Write(resp)
+	_, _ = w.Write(resp)
 }
 
 func (h TodosHandler) RequestHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,25 +54,25 @@ func (h TodosHandler) RequestHandler(w http.ResponseWriter, r *http.Request) {
 	repeat := r.URL.Query().Get("repeat")
 	parsedNow, err := time.Parse("20060102", now)
 	if err != nil {
-		_,_ = w.Write([]byte(fmt.Sprint("%w", err)))
+		_, _ = w.Write([]byte(fmt.Sprint("%w", err)))
 		return
 	}
 	result, err := NextDate(parsedNow, date, repeat)
 	if err != nil {
-		_,_ = w.Write([]byte(fmt.Sprint("%w", err)))
+		_, _ = w.Write([]byte(fmt.Sprint("%w", err)))
 		return
 	}
-	_,_ = w.Write([]byte(result))
+	_, _ = w.Write([]byte(result))
 }
 
 func (h TodosHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	check, err := idValid(id)
+	task, err := h.repo.GetTaskByID(id)
 	if err != nil {
 		JSONError(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	if !check {
+	if task.Id == "" {
 		JSONError(w, "Задача не найдена", http.StatusBadRequest)
 		return
 	}
@@ -88,23 +88,18 @@ func (h TodosHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_,_ = w.Write(resp)
+	_, _ = w.Write(resp)
 }
 
 func (h TodosHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	check, err := idValid(id)
+	task, err := h.repo.GetTaskByID(id)
 	if err != nil {
 		JSONError(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	if !check {
+	if task.Id == "" {
 		JSONError(w, "Задача не найдена", http.StatusBadRequest)
-		return
-	}
-	task, err := h.repo.GetTaskByID(id)
-	if err != nil {
-		JSONError(w, "Задача не найдена", http.StatusInternalServerError)
 		return
 	}
 	switch task.Repeat {
@@ -121,7 +116,7 @@ func (h TodosHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_,_ = w.Write(resp)
+		_, _ = w.Write(resp)
 	default:
 		timeNow, err := time.Parse("20060102", currentDate())
 		if err != nil {
@@ -146,7 +141,7 @@ func (h TodosHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_,_ = w.Write(resp)
+		_, _ = w.Write(resp)
 	}
 }
 
@@ -157,8 +152,19 @@ func (h TodosHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	// check if task received is valid
 	task, err = validateTask(w, task)
 	if err != nil {
+		return
+	}
+	// check if received task exists in DB
+	tempTask, err := h.repo.GetTaskByID(task.Id)
+	if err != nil {
+		JSONError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if tempTask.Id == "" {
+		JSONError(w, "Задача не найдена", http.StatusBadRequest)
 		return
 	}
 	// sending task to db
@@ -174,7 +180,7 @@ func (h TodosHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_,_ = w.Write(resp)
+	_, _ = w.Write(resp)
 }
 
 func (h TodosHandler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +203,7 @@ func (h TodosHandler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "Internal server error", http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_,_ = w.Write(resp)
+	_, _ = w.Write(resp)
 }
 
 func (h TodosHandler) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +215,7 @@ func (h TodosHandler) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_,_ = w.Write(resp)
+	_, _ = w.Write(resp)
 }
 
 func (h TodosHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
@@ -221,7 +227,7 @@ func (h TodosHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 	task, err = validateNewTask(w, task)
 	if err != nil {
-		return 
+		return
 	}
 	// sending task to db and get id
 	var taskId model.IdStrusct
@@ -238,7 +244,7 @@ func (h TodosHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_,_ = w.Write(resp)
+	_, _ = w.Write(resp)
 }
 
 func auth(next http.HandlerFunc, cfg *config.Config) http.HandlerFunc {

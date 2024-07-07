@@ -1,47 +1,18 @@
 package api
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	model "github.com/igortoigildin/todo_app/internal/model"
-	storage "github.com/igortoigildin/todo_app/internal/storage"
 )
 
 const (
 	jwtSecret = "your-secret-key" // string for JWT secret
 )
-
-func idValid(id string) (bool, error) {
-	if id == "" {
-		return false, nil
-	}
-	db, err := storage.ConnectDB("scheduler.db")
-	if err != nil {
-		log.Println(err)
-		return false, err
-	}
-	defer db.Close()
-	rows, err := db.Query("SELECT * FROM scheduler WHERE id= :id;", sql.Named("id", id))
-	if err != nil {
-		return false, err
-	}
-	tasks := make([]model.Task, 0)
-	for rows.Next() {
-		var task model.Task
-		if err := rows.Scan(&task.Id, &task.Date, &task.Title, &task.Comment, &task.Repeat); err != nil {
-			log.Println(err.Error())
-			return false, err
-		}
-		tasks = append(tasks, task)
-	}
-	return len(tasks) != 0, nil
-}
 
 func verifyToken(tokenString string) error {
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
@@ -63,14 +34,14 @@ func checkIfTaskRequestValid(w http.ResponseWriter, task model.Task) bool {
 		return false
 	}
 	// check if time format is valid
-	_, err := time.Parse("20060102", task.Date)
+	_, err := time.Parse(yymmdd, task.Date)
 	if err != nil {
 		JSONError(w, "Дата представлена в некорректном формате", http.StatusBadRequest)
 		return false
 	}
 	// check repeat format
 	if task.Repeat != "" {
-		timeNow, err := time.Parse("20060102", currentDate())
+		timeNow, err := time.Parse(yymmdd, currentDate())
 		if err != nil {
 			JSONError(w, "Interanal server error", http.StatusInternalServerError)
 			return false
@@ -103,15 +74,6 @@ func checkPass(passStruct model.PassStruct) (string, error) {
 }
 
 func validateTask(w http.ResponseWriter, task model.Task) (model.Task, error) {
-	check, err := idValid(task.Id)
-	if err != nil && task.Id != "" {
-		JSONError(w, "Internal server error", http.StatusInternalServerError)
-		return task, err
-	}
-	if !check {
-		JSONError(w, "Задача не найдена", http.StatusBadRequest)
-		return task, fmt.Errorf("not found")
-	}
 	// Setting current date if date received is ""
 	if task.Date == "" {
 		task.Date = currentDate()
@@ -119,12 +81,12 @@ func validateTask(w http.ResponseWriter, task model.Task) (model.Task, error) {
 	if !checkIfTaskRequestValid(w, task) {
 		return task, fmt.Errorf("task request not valid")
 	}
-	timeNow, err := time.Parse("20060102", currentDate())
+	timeNow, err := time.Parse(yymmdd, currentDate())
 	if err != nil {
 		JSONError(w, "Interanal server error", http.StatusInternalServerError)
 		return task, err
 	}
-	dateReceived, _ := time.Parse("20060102", task.Date)
+	dateReceived, _ := time.Parse(yymmdd, task.Date)
 	// check if date is correct
 	task, err = validateDate(task, timeNow, dateReceived)
 	if err != nil {
@@ -158,11 +120,11 @@ func validateNewTask(w http.ResponseWriter, task model.Task) (model.Task, error)
 	if !checkIfTaskRequestValid(w, task) {
 		return task, fmt.Errorf("task request not valid")
 	}
-	dateReceived, err := time.Parse("20060102", task.Date)
+	dateReceived, err := time.Parse(yymmdd, task.Date)
 	if err != nil {
 		JSONError(w, "Дата представлена в некорректном формате", http.StatusBadRequest)
 	}
-	timeNow, err := time.Parse("20060102", currentDate())
+	timeNow, err := time.Parse(yymmdd, currentDate())
 	if err != nil {
 		JSONError(w, "Interanal server error", http.StatusInternalServerError)
 	}

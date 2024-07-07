@@ -10,10 +10,3 @@ type Task struct {
 type IdStrusct struct {
 	Id int64 `json:"id"`
 }
-
-type passStruct struct {
-	Password string `json:"password"`
-}
-type token struct {
-	Token string `json:"token"`
-}

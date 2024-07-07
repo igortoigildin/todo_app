@@ -7,7 +7,7 @@ type Storage interface {
 	GetTasksByDate(date string) ([]task.Task, error)
 	GetTasksByPhrase(phrase string) ([]task.Task, error)
 	UpdateTask(task task.Task) error
-	CreateTask(task task.Task) (int64, error) ///// done
+	CreateTask(task task.Task) (int64, error)
 	GetAllTasks() ([]task.Task, error)
 	DeleteTask(id string) error
 }

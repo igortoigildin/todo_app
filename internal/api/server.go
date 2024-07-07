@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -28,6 +27,6 @@ func RunServer() {
 	r.Post("/api/sign", handler.SigninHandler)
 	r.Handle("/*", http.FileServer(http.Dir("./web")))
 
-	fmt.Printf("Starting server on :%s\n", cfg.Port)
+	log.Printf("Starting server on :%s\n", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
 }

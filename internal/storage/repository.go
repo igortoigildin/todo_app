@@ -177,10 +177,10 @@ func dbCheck(DBname string) bool {
 func CreateTable(db *sql.DB) {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS scheduler (
 	id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-	date TEXT,
+	date char(8),
 	title TEXT,
 	comment TEXT,
-	repeat TEXT
+	repeat TEXT(128)
 	);`)
 	if err != nil {
 		log.Println("failed to create table", err)

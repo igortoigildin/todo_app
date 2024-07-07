@@ -19,5 +19,4 @@ COPY --from=build /build/web /usr/bin
 
 EXPOSE ${TODO_PORT}
 
-CMD ["./build"]
-
+CMD ["server"]
