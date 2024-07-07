@@ -178,7 +178,7 @@ func CreateTable(db *sql.DB) {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS scheduler (
 	id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 	date char(8),
-	title TEXT,
+	title TEXT(150),
 	comment TEXT,
 	repeat TEXT(128)
 	);`)
