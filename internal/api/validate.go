@@ -27,34 +27,6 @@ func verifyToken(tokenString string) error {
 	return err
 }
 
-func checkIfTaskRequestValid(w http.ResponseWriter, task model.Task) bool {
-	// check if title line is empty
-	if task.Title == "" {
-		JSONError(w, "не указан заголовок задачи", http.StatusBadRequest)
-		return false
-	}
-	// check if time format is valid
-	_, err := time.Parse(yymmdd, task.Date)
-	if err != nil {
-		JSONError(w, "Дата представлена в некорректном формате", http.StatusBadRequest)
-		return false
-	}
-	// check repeat format
-	if task.Repeat != "" {
-		timeNow, err := time.Parse(yymmdd, currentDate())
-		if err != nil {
-			JSONError(w, "Interanal server error", http.StatusInternalServerError)
-			return false
-		}
-		_, err = NextDate(timeNow, task.Date, task.Repeat)
-		if err != nil {
-			JSONError(w, "Repeat format is not valid", http.StatusBadRequest)
-			return false
-		}
-	}
-	return true
-}
-
 func checkPass(passStruct model.PassStruct) (string, error) {
 	var signedToken string
 	var err error
@@ -78,7 +50,7 @@ func validateTask(w http.ResponseWriter, task model.Task) (model.Task, error) {
 	if task.Date == "" {
 		task.Date = currentDate()
 	}
-	if !checkIfTaskRequestValid(w, task) {
+	if !validateTaskRequest(w, task) {
 		return task, fmt.Errorf("task request not valid")
 	}
 	timeNow, err := time.Parse(yymmdd, currentDate())
@@ -106,39 +78,36 @@ func validateDate(task model.Task, timeNow time.Time, dateReceived time.Time) (m
 		task.Date = nextDate
 	} else if task.Date != "" && dateReceived.Unix() < timeNow.Unix() && task.Repeat == "" {
 		task.Date = currentDate()
-	} else if task.Date == "" || task.Repeat == "" {
+	} else if task.Date == "" && task.Repeat == "" {
 		task.Date = currentDate()
 	}
 	return task, nil
 }
 
-func validateNewTask(w http.ResponseWriter, task model.Task) (model.Task, error) {
-	// Setting current date if date received is ""
-	if task.Date == "" {
-		task.Date = currentDate()
+func validateTaskRequest(w http.ResponseWriter, task model.Task) bool {
+	// check if title line is empty
+	if task.Title == "" {
+		JSONError(w, "не указан заголовок задачи", http.StatusBadRequest)
+		return false
 	}
-	if !checkIfTaskRequestValid(w, task) {
-		return task, fmt.Errorf("task request not valid")
-	}
-	dateReceived, err := time.Parse(yymmdd, task.Date)
+	// check if time format is valid
+	_, err := time.Parse(yymmdd, task.Date)
 	if err != nil {
 		JSONError(w, "Дата представлена в некорректном формате", http.StatusBadRequest)
+		return false
 	}
-	timeNow, err := time.Parse(yymmdd, currentDate())
-	if err != nil {
-		JSONError(w, "Interanal server error", http.StatusInternalServerError)
-	}
-	// check if date in request is before current date or empty
-	if task.Date != "" && dateReceived.Unix() < timeNow.Unix() && task.Repeat != "" {
-		nextDate, err := NextDate(timeNow, task.Date, task.Repeat)
+	// check repeat format
+	if task.Repeat != "" {
+		timeNow, err := time.Parse(yymmdd, currentDate())
+		if err != nil {
+			JSONError(w, "Interanal server error", http.StatusInternalServerError)
+			return false
+		}
+		_, err = NextDate(timeNow, task.Date, task.Repeat)
 		if err != nil {
 			JSONError(w, "Repeat format is not valid", http.StatusBadRequest)
+			return false
 		}
-		task.Date = nextDate
-	} else if task.Date != "" && dateReceived.Unix() < timeNow.Unix() && task.Repeat == "" {
-		task.Date = currentDate()
-	} else if task.Date == "" && task.Repeat == "" {
-		task.Date = currentDate()
 	}
-	return task, nil
+	return true
 }

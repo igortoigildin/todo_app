@@ -52,7 +52,7 @@ func (h TodosHandler) RequestHandler(w http.ResponseWriter, r *http.Request) {
 	now := r.URL.Query().Get("now")
 	date := r.URL.Query().Get("date")
 	repeat := r.URL.Query().Get("repeat")
-	parsedNow, err := time.Parse("20060102", now)
+	parsedNow, err := time.Parse(yymmdd, now)
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprint("%w", err)))
 		return
@@ -81,7 +81,7 @@ func (h TodosHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var blank []int
+	blank := make(map[string]interface{}, 0)
 	resp, err := json.Marshal(blank)
 	if err != nil {
 		JSONError(w, "Internal Server Error", http.StatusInternalServerError)
@@ -106,10 +106,11 @@ func (h TodosHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
 	case "":
 		err = h.repo.DeleteTask(id)
 		if err != nil {
+
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		var blank []int
+		blank := make(map[string]interface{}, 0)
 		resp, err := json.Marshal(blank)
 		if err != nil {
 			JSONError(w, "Internal Server Error", http.StatusInternalServerError)
@@ -118,7 +119,7 @@ func (h TodosHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(resp)
 	default:
-		timeNow, err := time.Parse("20060102", currentDate())
+		timeNow, err := time.Parse(yymmdd, currentDate())
 		if err != nil {
 			JSONError(w, "Interanal server error", http.StatusInternalServerError)
 			return
@@ -134,9 +135,10 @@ func (h TodosHandler) TaskDone(w http.ResponseWriter, r *http.Request) {
 			JSONError(w, "Задача не найдена", http.StatusInternalServerError)
 			return
 		}
-		var blank []int
+		blank := make(map[string]interface{}, 0)
 		resp, err := json.Marshal(blank)
 		if err != nil {
+
 			JSONError(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -225,7 +227,7 @@ func (h TodosHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	task, err = validateNewTask(w, task)
+	task, err = validateTask(w, task)
 	if err != nil {
 		return
 	}
