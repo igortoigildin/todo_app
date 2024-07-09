@@ -18,7 +18,7 @@ func TestTask(t *testing.T) {
 	now := time.Now()
 
 	task := task{
-		date:    now.Format(`20060102`),
+		date:    now.Format(yymmdd),
 		title:   "Созвон в 16:00",
 		comment: "Обсуждение планов",
 		repeat:  "d 5",
@@ -60,7 +60,7 @@ func TestEditTask(t *testing.T) {
 	now := time.Now()
 
 	tsk := task{
-		date:    now.Format(`20060102`),
+		date:    now.Format(yymmdd),
 		title:   "Заказать пиццу",
 		comment: "в 17:00",
 		repeat:  "",
@@ -116,7 +116,7 @@ func TestEditTask(t *testing.T) {
 		}
 		assert.Equal(t, newVals["comment"], task.Comment)
 		assert.Equal(t, newVals["repeat"], task.Repeat)
-		now := time.Now().Format(`20060102`)
+		now := time.Now().Format(yymmdd)
 		if task.Date < now {
 			t.Errorf("Дата не может быть меньше сегодняшней")
 		}
@@ -124,7 +124,7 @@ func TestEditTask(t *testing.T) {
 
 	updateTask(map[string]any{
 		"id":      id,
-		"date":    now.Format(`20060102`),
+		"date":    now.Format(yymmdd),
 		"title":   "Заказать хинкали",
 		"comment": "в 18:00",
 		"repeat":  "d 7",
