@@ -14,6 +14,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	yymmdd = "20060102" // date format constant
+	ddmmyy = "02012006" // date format constant
+)
+
 func requestJSON(apipath string, values map[string]any, method string) ([]byte, error) {
 	var (
 		data []byte
@@ -111,8 +116,9 @@ func TestAddTask(t *testing.T) {
 	check := func() {
 		for _, v := range tbl {
 			today := v.date == "today"
+
 			if today {
-				v.date = now.Format(`20060102`)
+				v.date = now.Format(yymmdd)
 			}
 			m, err := postJSON("api/task", map[string]any{
 				"date":    v.date,
@@ -143,11 +149,11 @@ func TestAddTask(t *testing.T) {
 			assert.Equal(t, v.title, task.Title)
 			assert.Equal(t, v.comment, task.Comment)
 			assert.Equal(t, v.repeat, task.Repeat)
-			if task.Date < now.Format(`20060102`) {
+			if task.Date < now.Format(yymmdd) {
 				t.Errorf("Дата не может быть меньше сегодняшней %v", v)
 				continue
 			}
-			if today && task.Date != now.Format(`20060102`) {
+			if today && task.Date != now.Format(yymmdd) {
 				t.Errorf("Дата должна быть сегодняшняя %v", v)
 			}
 		}
