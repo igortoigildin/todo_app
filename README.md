@@ -49,6 +49,8 @@ docker run -d --rm -p 7540:7540 my-app:v1
 
 <!-- start:code block -->
 
+```shell
 go test ./tests
+```
 
 <!-- end:code block -->
