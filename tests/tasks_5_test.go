@@ -51,13 +51,13 @@ func TestTasks(t *testing.T) {
 	assert.Empty(t, tasks)
 
 	addTask(t, task{
-		date:    now.Format(`20060102`),
+		date:    now.Format(yymmdd),
 		title:   "Просмотр фильма",
 		comment: "с попкорном",
 		repeat:  "",
 	})
 	now = now.AddDate(0, 0, 1)
-	date := now.Format(`20060102`)
+	date := now.Format(yymmdd)
 	addTask(t, task{
 		date:    date,
 		title:   "Сходить в бассейн",
@@ -74,7 +74,7 @@ func TestTasks(t *testing.T) {
 	assert.Equal(t, len(tasks), 3)
 
 	now = now.AddDate(0, 0, 2)
-	date = now.Format(`20060102`)
+	date = now.Format(yymmdd)
 	addTask(t, task{
 		date:    date,
 		title:   "Поплавать",
@@ -104,5 +104,4 @@ func TestTasks(t *testing.T) {
 	assert.Equal(t, len(tasks), 1)
 	tasks = getTasks(t, now.Format(`02.01.2006`))
 	assert.Equal(t, len(tasks), 3)
-
 }
