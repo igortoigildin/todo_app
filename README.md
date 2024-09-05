@@ -1,7 +1,3 @@
-## Introduction
-
-A simple todolist application written in Go
-
 ## Requirements
 
 SQLite installed
