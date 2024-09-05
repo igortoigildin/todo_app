@@ -40,6 +40,16 @@ docker build --tag my-app:v1 .
 
 <!-- end:code block -->
 
+#### To run Docker Container, execute:
+
+<!-- start:code block -->
+
+```shell
+docker run -d -p 7540:7540 my-app:v1
+```
+
+<!-- end:code block -->
+
 #### To run tests, execute:
 
 <!-- start:code block -->
